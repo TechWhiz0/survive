@@ -414,18 +414,17 @@ export function App() {
       <section className="mx-auto max-w-[90rem] px-8 pb-28" id="compare">
         <div className="mb-10 border-t border-[#3d3833] pt-12">
           <p className="text-xs tracking-[0.22em] text-[#d2cbc2]">
-            SAME SALARY · FIVE CITIES
+            SAME SALARY · {cities.length} CITIES
           </p>
           <h2 className="mt-4 max-w-4xl font-serif text-5xl font-medium leading-tight">
-            {rupees(printed.salary)} in Bangalore vs Jaipur vs Delhi vs Mumbai vs
-            Indore
+            {rupees(printed.salary)} across {cities.length} Indian cities
           </h2>
           <p className="mt-4 text-xs tracking-[0.16em] text-[#c4b7a4]">
             Bars are share of salary. Holds · Tight · Breaks · Gone
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-px bg-[#3d3833] sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-px bg-[#3d3833] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {comparisons.map((row) => {
             const pressure = shareOfSalary(
               row.lines.rent.amount + row.lines.food.amount,

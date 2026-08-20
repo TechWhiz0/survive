@@ -1,11 +1,29 @@
 import snapshot from "@/data/living.json";
 
-export type CityId =
-  | "bangalore"
-  | "jaipur"
-  | "delhi"
-  | "mumbai"
-  | "indore";
+export const CITY_SLUGS = {
+  mumbai: "Mumbai",
+  delhi: "Delhi",
+  bangalore: "Bangalore",
+  hyderabad: "Hyderabad",
+  pune: "Pune",
+  chennai: "Chennai",
+  kolkata: "Kolkata",
+  ahmedabad: "Ahmedabad",
+  gurgaon: "Gurgaon",
+  noida: "Noida",
+  jaipur: "Jaipur",
+  chandigarh: "Chandigarh",
+  kochi: "Kochi",
+  lucknow: "Lucknow",
+  indore: "Indore",
+  bhopal: "Bhopal",
+  nagpur: "Nagpur",
+  coimbatore: "Coimbatore",
+  goa: "Goa",
+  surat: "Surat",
+} as const;
+
+export type CityId = keyof typeof CITY_SLUGS;
 
 export type FamilySize = 1 | 2 | 3 | 4;
 export type Mark = "✅" | "⚠️" | "❌" | "💀" | "☠️";
@@ -37,21 +55,8 @@ export type LivingFile = {
   cities: Record<string, CityCosts>;
 };
 
-export const CITY_ORDER: CityId[] = [
-  "bangalore",
-  "jaipur",
-  "delhi",
-  "mumbai",
-  "indore",
-];
-
-const SLUG: Record<CityId, string> = {
-  bangalore: "Bangalore",
-  jaipur: "Jaipur",
-  delhi: "Delhi",
-  mumbai: "Mumbai",
-  indore: "Indore",
-};
+export const CITY_ORDER = Object.keys(CITY_SLUGS) as CityId[];
+const SLUG = CITY_SLUGS;
 
 export type Tone = "hold" | "tight" | "break" | "void";
 
@@ -79,10 +84,9 @@ export const LINE_LABELS: Record<LineKey, string> = {
 };
 
 export function citiesFromLiving(data: LivingFile): CityCosts[] {
-  return CITY_ORDER.map((id) => {
+  return CITY_ORDER.flatMap((id) => {
     const city = data.cities[id];
-    if (!city) throw new Error(`Missing city ${id}`);
-    return city as CityCosts;
+    return city ? [city as CityCosts] : [];
   });
 }
 

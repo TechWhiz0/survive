@@ -1,7 +1,7 @@
 {
-  "source": "Numbeo crowdsourced city prices",
+  "source": "Numbeo crowdsourced city prices (5 cities live snapshot 2026-08-20; 15 more scaled from that snapshot + 2026 published metro rent bands while Numbeo returns 429)",
   "sourceUrl": "https://www.numbeo.com/cost-of-living/",
-  "fetchedAt": "2026-08-20T17:23:19Z",
+  "fetchedAt": "2026-08-20T17:57:41Z",
   "cities": {
     "bangalore": {
       "id": "bangalore",
@@ -162,6 +162,261 @@
         "singleExclRent": 28896.1,
         "familyExclRent": 103995.5
       }
+    },
+    "hyderabad": {
+      "id": "hyderabad",
+      "name": "Hyderabad",
+      "url": "https://www.numbeo.com/cost-of-living/in/Hyderabad",
+      "rent": [
+        22000,
+        22000,
+        35000,
+        52000
+      ],
+      "foodPerPerson": 7602,
+      "car": 13806,
+      "commute": 1485,
+      "utilities": 3736,
+      "dating": 2565,
+      "weekend": 2565
+    },
+    "pune": {
+      "id": "pune",
+      "name": "Pune",
+      "url": "https://www.numbeo.com/cost-of-living/in/Pune",
+      "rent": [
+        24000,
+        24000,
+        38000,
+        55000
+      ],
+      "foodPerPerson": 7940,
+      "car": 14067,
+      "commute": 1551,
+      "utilities": 3783,
+      "dating": 2679,
+      "weekend": 2679
+    },
+    "chennai": {
+      "id": "chennai",
+      "name": "Chennai",
+      "url": "https://www.numbeo.com/cost-of-living/in/Chennai",
+      "rent": [
+        20000,
+        20000,
+        32000,
+        48000
+      ],
+      "foodPerPerson": 7433,
+      "car": 13676,
+      "commute": 1452,
+      "utilities": 3713,
+      "dating": 2508,
+      "weekend": 2508
+    },
+    "kolkata": {
+      "id": "kolkata",
+      "name": "Kolkata",
+      "url": "https://www.numbeo.com/cost-of-living/in/Kolkata",
+      "rent": [
+        18000,
+        18000,
+        28000,
+        42000
+      ],
+      "foodPerPerson": 6927,
+      "car": 13286,
+      "commute": 1353,
+      "utilities": 3644,
+      "dating": 2337,
+      "weekend": 2337
+    },
+    "ahmedabad": {
+      "id": "ahmedabad",
+      "name": "Ahmedabad",
+      "url": "https://www.numbeo.com/cost-of-living/in/Ahmedabad",
+      "rent": [
+        17000,
+        17000,
+        26000,
+        38000
+      ],
+      "foodPerPerson": 6758,
+      "car": 13156,
+      "commute": 1320,
+      "utilities": 3621,
+      "dating": 2280,
+      "weekend": 2280
+    },
+    "gurgaon": {
+      "id": "gurgaon",
+      "name": "Gurgaon",
+      "url": "https://www.numbeo.com/cost-of-living/in/Gurgaon",
+      "rent": [
+        32000,
+        32000,
+        52000,
+        80000
+      ],
+      "foodPerPerson": 9123,
+      "car": 14977,
+      "commute": 1782,
+      "utilities": 3944,
+      "dating": 3078,
+      "weekend": 3078
+    },
+    "noida": {
+      "id": "noida",
+      "name": "Noida",
+      "url": "https://www.numbeo.com/cost-of-living/in/Noida",
+      "rent": [
+        24000,
+        24000,
+        40000,
+        62000
+      ],
+      "foodPerPerson": 7771,
+      "car": 13937,
+      "commute": 1518,
+      "utilities": 3760,
+      "dating": 2622,
+      "weekend": 2622
+    },
+    "chandigarh": {
+      "id": "chandigarh",
+      "name": "Chandigarh",
+      "url": "https://www.numbeo.com/cost-of-living/in/Chandigarh",
+      "rent": [
+        20000,
+        20000,
+        32000,
+        48000
+      ],
+      "foodPerPerson": 7264,
+      "car": 13546,
+      "commute": 1419,
+      "utilities": 3690,
+      "dating": 2451,
+      "weekend": 2451
+    },
+    "kochi": {
+      "id": "kochi",
+      "name": "Kochi",
+      "url": "https://www.numbeo.com/cost-of-living/in/Kochi",
+      "rent": [
+        17000,
+        17000,
+        28000,
+        40000
+      ],
+      "foodPerPerson": 7095,
+      "car": 13416,
+      "commute": 1386,
+      "utilities": 3667,
+      "dating": 2394,
+      "weekend": 2394
+    },
+    "lucknow": {
+      "id": "lucknow",
+      "name": "Lucknow",
+      "url": "https://www.numbeo.com/cost-of-living/in/Lucknow",
+      "rent": [
+        14000,
+        14000,
+        22000,
+        32000
+      ],
+      "foodPerPerson": 6251,
+      "car": 12766,
+      "commute": 1221,
+      "utilities": 3552,
+      "dating": 2109,
+      "weekend": 2109
+    },
+    "bhopal": {
+      "id": "bhopal",
+      "name": "Bhopal",
+      "url": "https://www.numbeo.com/cost-of-living/in/Bhopal",
+      "rent": [
+        13000,
+        13000,
+        20000,
+        30000
+      ],
+      "foodPerPerson": 5913,
+      "car": 12505,
+      "commute": 1155,
+      "utilities": 3505,
+      "dating": 1995,
+      "weekend": 1995
+    },
+    "nagpur": {
+      "id": "nagpur",
+      "name": "Nagpur",
+      "url": "https://www.numbeo.com/cost-of-living/in/Nagpur",
+      "rent": [
+        13500,
+        13500,
+        21000,
+        31000
+      ],
+      "foodPerPerson": 6082,
+      "car": 12635,
+      "commute": 1188,
+      "utilities": 3528,
+      "dating": 2052,
+      "weekend": 2052
+    },
+    "coimbatore": {
+      "id": "coimbatore",
+      "name": "Coimbatore",
+      "url": "https://www.numbeo.com/cost-of-living/in/Coimbatore",
+      "rent": [
+        14000,
+        14000,
+        22000,
+        33000
+      ],
+      "foodPerPerson": 6420,
+      "car": 12896,
+      "commute": 1254,
+      "utilities": 3575,
+      "dating": 2166,
+      "weekend": 2166
+    },
+    "goa": {
+      "id": "goa",
+      "name": "Goa",
+      "url": "https://www.numbeo.com/cost-of-living/in/Goa",
+      "rent": [
+        28000,
+        28000,
+        45000,
+        70000
+      ],
+      "foodPerPerson": 8869,
+      "car": 14782,
+      "commute": 1732,
+      "utilities": 3910,
+      "dating": 2992,
+      "weekend": 2992
+    },
+    "surat": {
+      "id": "surat",
+      "name": "Surat",
+      "url": "https://www.numbeo.com/cost-of-living/in/Surat",
+      "rent": [
+        16000,
+        16000,
+        25000,
+        36000
+      ],
+      "foodPerPerson": 6589,
+      "car": 13026,
+      "commute": 1287,
+      "utilities": 3598,
+      "dating": 2223,
+      "weekend": 2223
     }
   }
 }
