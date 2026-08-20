@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-cream: #e8e0d4;
+  --color-cream-ink: #161412;
+  --color-copper: #c4784a;
+  --color-muted: #d2cbc2;
+  --color-line: #5c564e;
+
+  --color-grayscale-1: #fcfcfc;
+  --color-grayscale-2: #f8f8f8;
+  --color-grayscale-3: #f3f3f3;
+  --color-grayscale-4: #ededed;
+  --color-grayscale-5: #e8e8e8;
+  --color-grayscale-6: #e2e2e2;
+  --color-grayscale-7: #dbdbdb;
+  --color-grayscale-8: #c8c8c8;
+  --color-grayscale-9: #8f8f8f;
+  --color-grayscale-10: #646464;
+  --color-grayscale-11: #202020;
+  --color-grayscale-12: #121212;
+  --color-green-9: #30a46c;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #050505;
+  color: #f4efe8;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: #c4784a;
+  color: #050505;
+}
+
+input[type="range"] {
+  appearance: none;
+  height: 3px;
+  background: #5c564e;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #e8e0d4;
+  cursor: pointer;
+}
+
+input[type="range"]:focus-visible {
+  outline: 2px solid #e8e0d4;
+  outline-offset: 6px;
+}

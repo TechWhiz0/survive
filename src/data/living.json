@@ -1,0 +1,167 @@
+{
+  "source": "Numbeo crowdsourced city prices",
+  "sourceUrl": "https://www.numbeo.com/cost-of-living/",
+  "fetchedAt": "2026-08-20T17:23:19Z",
+  "cities": {
+    "bangalore": {
+      "id": "bangalore",
+      "name": "Bangalore",
+      "url": "https://www.numbeo.com/cost-of-living/in/Bangalore",
+      "rent": [
+        30969,
+        30969,
+        47936,
+        79500
+      ],
+      "foodPerPerson": 8447,
+      "car": 14457,
+      "commute": 1650,
+      "utilities": 3852,
+      "dating": 2850,
+      "weekend": 2850,
+      "raw": {
+        "meal": 300.0,
+        "mealForTwo": 1950.0,
+        "cinema": 450.0,
+        "transportPass": 1650.0,
+        "gasoline": 105.71,
+        "utilities": 2867.31,
+        "internet": 984.52,
+        "rent1Centre": 30968.75,
+        "rent1Outside": 18444.0,
+        "rent3Centre": 79500.0,
+        "rent3Outside": 47935.68,
+        "singleExclRent": 34305.7,
+        "familyExclRent": 125710.1
+      }
+    },
+    "mumbai": {
+      "id": "mumbai",
+      "name": "Mumbai",
+      "url": "https://www.numbeo.com/cost-of-living/in/Mumbai",
+      "rent": [
+        61720,
+        61720,
+        80652,
+        181538
+      ],
+      "foodPerPerson": 12435,
+      "car": 14501,
+      "commute": 525,
+      "utilities": 6650,
+      "dating": 2850,
+      "weekend": 2850,
+      "raw": {
+        "meal": 500.0,
+        "mealForTwo": 2000.0,
+        "cinema": 425.0,
+        "transportPass": 525.0,
+        "gasoline": 106.26,
+        "utilities": 5749.39,
+        "internet": 900.5,
+        "rent1Centre": 61720.0,
+        "rent1Outside": 33769.23,
+        "rent3Centre": 181538.46,
+        "rent3Outside": 80652.17,
+        "singleExclRent": 37123.1,
+        "familyExclRent": 132746.8
+      }
+    },
+    "delhi": {
+      "id": "delhi",
+      "name": "Delhi",
+      "url": "https://www.numbeo.com/cost-of-living/in/Delhi",
+      "rent": [
+        25182,
+        25182,
+        37115,
+        69231
+      ],
+      "foodPerPerson": 10439,
+      "car": 14115,
+      "commute": 1500,
+      "utilities": 4702,
+      "dating": 3000,
+      "weekend": 3000,
+      "raw": {
+        "meal": 400.0,
+        "mealForTwo": 2000.0,
+        "cinema": 500.0,
+        "transportPass": 1500.0,
+        "gasoline": 101.44,
+        "utilities": 4021.58,
+        "internet": 680.35,
+        "rent1Centre": 25181.82,
+        "rent1Outside": 15160.71,
+        "rent3Centre": 69230.77,
+        "rent3Outside": 37115.38,
+        "singleExclRent": 33685.1,
+        "familyExclRent": 122342.1
+      }
+    },
+    "jaipur": {
+      "id": "jaipur",
+      "name": "Jaipur",
+      "url": "https://www.numbeo.com/cost-of-living/in/Jaipur",
+      "rent": [
+        18682,
+        18682,
+        22267,
+        38556
+      ],
+      "foodPerPerson": 8372,
+      "car": 14411,
+      "commute": 950,
+      "utilities": 5185,
+      "dating": 1800,
+      "weekend": 1800,
+      "raw": {
+        "meal": 300.0,
+        "mealForTwo": 1200.0,
+        "cinema": 300.0,
+        "transportPass": 950.0,
+        "gasoline": 105.14,
+        "utilities": 4480.1,
+        "internet": 704.62,
+        "rent1Centre": 18681.82,
+        "rent1Outside": 8617.83,
+        "rent3Centre": 38555.56,
+        "rent3Outside": 22266.67,
+        "singleExclRent": 29186.2,
+        "familyExclRent": 103465.7
+      }
+    },
+    "indore": {
+      "id": "indore",
+      "name": "Indore",
+      "url": "https://www.numbeo.com/cost-of-living/in/Indore",
+      "rent": [
+        15175,
+        15175,
+        18825,
+        32475
+      ],
+      "foodPerPerson": 6013,
+      "car": 14460,
+      "commute": 500,
+      "utilities": 4184,
+      "dating": 2240,
+      "weekend": 2240,
+      "raw": {
+        "meal": 200.0,
+        "mealForTwo": 1500.0,
+        "cinema": 370.0,
+        "transportPass": 500.0,
+        "gasoline": 105.75,
+        "utilities": 3405.58,
+        "internet": 778.89,
+        "rent1Centre": 15175.0,
+        "rent1Outside": 8340.0,
+        "rent3Centre": 32475.0,
+        "rent3Outside": 18825.0,
+        "singleExclRent": 28896.1,
+        "familyExclRent": 103995.5
+      }
+    }
+  }
+}
