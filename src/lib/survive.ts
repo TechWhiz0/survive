@@ -30,6 +30,7 @@ export type Mark = "✅" | "⚠️" | "❌" | "💀" | "☠️";
 export type LineKey =
   | "rent"
   | "food"
+  | "school"
   | "car"
   | "savings"
   | "dating"
@@ -41,6 +42,7 @@ export type CityCosts = {
   url?: string;
   rent: number[];
   foodPerPerson: number;
+  school?: number;
   car: number;
   commute: number;
   utilities: number;
@@ -77,11 +79,23 @@ export function toneCopy(tone: Tone): string {
 export const LINE_LABELS: Record<LineKey, string> = {
   rent: "Rent",
   food: "Food",
+  school: "Education",
   car: "Car",
   savings: "Savings",
   dating: "Dating",
   weekend: "Weekend plans",
 };
+
+export function kidsInFamily(family: FamilySize): number {
+  return family >= 3 ? family - 2 : 0;
+}
+
+/** Mid CBSE private / child / month. Not Numbeo international. */
+function schoolPerChild(city: CityCosts): number {
+  if (city.school) return city.school;
+  // ponytail: rent+food blend until a live city fee lands on CityCosts.school
+  return Math.round(city.foodPerPerson * 0.5 + (city.rent[0] ?? 0) * 0.1);
+}
 
 export function citiesFromLiving(data: LivingFile): CityCosts[] {
   return CITY_ORDER.flatMap((id) => {
@@ -112,9 +126,23 @@ function markFood(food: number, salary: number): Mark {
   return "✅";
 }
 
-function markCar(rent: number, food: number, car: number, salary: number): Mark {
-  if (rent + food + car > salary) return "❌";
-  if (salary - rent - food - car < salary * 0.1) return "⚠️";
+function markCar(
+  rent: number,
+  food: number,
+  school: number,
+  car: number,
+  salary: number,
+): Mark {
+  if (rent + food + school + car > salary) return "❌";
+  if (salary - rent - food - school - car < salary * 0.1) return "⚠️";
+  return "✅";
+}
+
+function markSchool(school: number, salary: number): Mark {
+  if (school <= 0) return "✅";
+  const share = school / salary;
+  if (share > 0.25) return "❌";
+  if (share > 0.15) return "⚠️";
   return "✅";
 }
 
@@ -162,11 +190,13 @@ export function simulate(
   const city = cityById(cities, cityId);
   const rent = city.rent[family - 1] ?? city.rent.at(-1) ?? 0;
   const food = city.foodPerPerson * family;
+  const school = schoolPerChild(city) * kidsInFamily(family);
   const dating = family >= 3 ? Math.round(city.dating * 0.55) : city.dating;
   const weekend = Math.round(
     city.weekend * (family === 1 ? 1 : 0.75 + family * 0.15),
   );
-  const leftover = salary - rent - food - city.commute - city.utilities;
+  const leftover =
+    salary - rent - food - school - city.commute - city.utilities;
   const afterDating = leftover - Math.min(dating, Math.max(leftover, 0));
 
   const lines: Record<LineKey, Line> = {
@@ -182,11 +212,17 @@ export function simulate(
       amount: food,
       mark: markFood(food, salary),
     },
+    school: {
+      key: "school",
+      label: LINE_LABELS.school,
+      amount: school,
+      mark: markSchool(school, salary),
+    },
     car: {
       key: "car",
       label: LINE_LABELS.car,
       amount: city.car,
-      mark: markCar(rent, food, city.car, salary),
+      mark: markCar(rent, food, school, city.car, salary),
     },
     savings: {
       key: "savings",
@@ -211,6 +247,7 @@ export function simulate(
   const survives =
     lines.rent.mark !== "❌" &&
     lines.food.mark !== "❌" &&
+    lines.school.mark !== "❌" &&
     lines.savings.mark !== "💀";
 
   return { city, salary, family, lines, leftover, survives };
@@ -269,6 +306,7 @@ function deriveCity(
   const chicken = pick(prices, "Chicken Fillets") ?? 0;
   const groceries = milk * 8 + bread * 8 + rice * 4 + eggs * 2 + chicken * 3;
   const dateNight = Math.round(meal2 + cinema * 2);
+  const intlYear = pick(prices, "International Primary School") ?? 0;
   return {
     id,
     name: SLUG[id],
@@ -280,6 +318,7 @@ function deriveCity(
       Math.round(rent3c || rent3o),
     ],
     foodPerPerson: Math.round(groceries + meal * 20),
+    school: Math.round(intlYear ? (intlYear / 12) * 0.4 : rent1c * 0.22),
     car: Math.round(gas * 80 + 6000),
     commute: Math.round(pass),
     utilities: Math.round(utilities + internet),
@@ -316,4 +355,11 @@ export function assertSurvivalExample(): void {
   const r = simulate("bangalore", 50_000, 1);
   if (r.lines.rent.mark !== "❌") throw new Error("Bangalore rent should fail at ₹50k");
   if (r.lines.food.mark === "❌") throw new Error("Bangalore food should not fail at ₹50k");
+  if (r.lines.school.amount !== 0) throw new Error("solo pays no school");
+  const family = simulate("bangalore", 80_000, 3);
+  if (family.lines.school.amount <= 0) throw new Error("family of 3 needs school");
+  const two = simulate("bangalore", 80_000, 4);
+  if (two.lines.school.amount !== family.lines.school.amount * 2) {
+    throw new Error("family of 4 is two children");
+  }
 }

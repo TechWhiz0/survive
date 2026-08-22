@@ -30,11 +30,16 @@ const FAMILY: { value: FamilySize; label: string }[] = [
 const LINE_ORDER: LineKey[] = [
   "rent",
   "food",
+  "school",
   "car",
   "savings",
   "dating",
   "weekend",
 ];
+
+function visibleLines(result: Survival): LineKey[] {
+  return LINE_ORDER.filter((key) => key !== "school" || result.family >= 3);
+}
 
 function usePrinter(run: number) {
   const [stage, setStage] = useState<ReceiptPrinterStage>("processing");
@@ -167,7 +172,7 @@ function ReceiptBody({ result }: { result: Survival }) {
         Household: {result.family === 4 ? "4+" : result.family}
       </p>
       <div className="my-5 border-t border-dashed border-[#b7aea3]" />
-      {LINE_ORDER.map((key) => {
+      {visibleLines(result).map((key) => {
         const line = result.lines[key];
         const tone = lineTone(line.mark);
         const width = shareOfSalary(Math.max(line.amount, 0), result.salary);
@@ -191,7 +196,10 @@ function ReceiptBody({ result }: { result: Survival }) {
       })}
       <div className="my-5 border-t border-dashed border-[#b7aea3]" />
       <p className="flex justify-between text-[#1c1916]">
-        <span>Left after rent + food</span>
+        <span>
+          Left after rent + food
+          {result.family >= 3 ? " + education" : ""}
+        </span>
         <span>{rupees(result.leftover)}</span>
       </p>
       <p className="mt-5 text-center font-serif text-2xl leading-none text-[#1c1916]">
@@ -199,6 +207,7 @@ function ReceiptBody({ result }: { result: Survival }) {
       </p>
       <p className="mt-4 text-center text-[11px] leading-4 text-[#4a453f]">
         Numbeo city prices. 1BHK centre / 3BHK for families.
+        {result.family >= 3 ? " Education is mid private, per child." : ""}
       </p>
     </div>
   );
@@ -221,7 +230,9 @@ function CityChart({
   featured?: boolean;
 }) {
   const pressure = shareOfSalary(
-    row.lines.rent.amount + row.lines.food.amount,
+    row.lines.rent.amount +
+      row.lines.food.amount +
+      row.lines.school.amount,
     row.salary,
   );
   return (
@@ -243,12 +254,12 @@ function CityChart({
             {Math.round(pressure * 100)}%
           </p>
           <p className="mt-2 text-[11px] tracking-[0.16em] text-[#c4b7a4]">
-            RENT + FOOD
+            {row.family >= 3 ? "RENT + FOOD + EDUCATION" : "RENT + FOOD"}
           </p>
         </div>
       </div>
       <div className="mt-8 space-y-5">
-        {LINE_ORDER.map((key) => {
+        {visibleLines(row).map((key) => {
           const line = row.lines[key];
           return (
             <LedgerBar
@@ -284,7 +295,6 @@ export function App() {
   const [city, setCity] = useState<CityId>("bangalore");
   const [salary, setSalary] = useState(50_000);
   const [family, setFamily] = useState<FamilySize>(1);
-  const [printed, setPrinted] = useState({ city, salary, family });
   const [peers, setPeers] = useState<CityId[]>([]);
   const [run, setRun] = useState(0);
   const stage = usePrinter(run);
@@ -308,10 +318,6 @@ export function App() {
   }, [city, cities]);
 
   const result = useMemo(
-    () => simulate(printed.city, printed.salary, printed.family, cities),
-    [printed, cities],
-  );
-  const selected = useMemo(
     () => simulate(city, salary, family, cities),
     [city, salary, family, cities],
   );
@@ -321,7 +327,6 @@ export function App() {
   }, [city, peers, salary, family, cities]);
 
   function printReceipt() {
-    setPrinted({ city, salary, family });
     setRun((n) => n + 1);
   }
 
@@ -361,8 +366,8 @@ export function App() {
           </h1>
           <p className="mt-7 max-w-2xl text-lg leading-8 text-[#d2cbc2]">
             Pick a city, a monthly salary, and a household. We print the receipt
-            the city actually hands you - rent, food, a car, savings, dating,
-            weekends.
+            the city actually hands you - rent, food, education for kids, a car,
+            savings, dating, weekends.
           </p>
           <p className="mt-4 text-sm text-[#c4b7a4]">
             {source} · {fetchedLabel} ·{" "}
@@ -493,7 +498,7 @@ export function App() {
             YOUR CITY + 3 RANDOM
           </p>
           <h2 className="mt-4 max-w-4xl font-serif text-5xl font-medium leading-tight">
-            {rupees(salary)} in {selected.city.name} vs three others
+            {rupees(salary)} in {result.city.name} vs three others
           </h2>
           <p className="mt-4 text-xs tracking-[0.16em] text-[#c4b7a4]">
             Bars are share of salary. Holds · Tight · Breaks · Gone

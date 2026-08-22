@@ -81,12 +81,14 @@ def main() -> None:
                 raise RuntimeError(f"no rent for {slug}")
             groceries = pick(p, "Milk (Regular, 1 Liter)") * 8 + pick(p, "Fresh White Bread") * 8 + pick(p, "White Rice (1 kg)") * 4 + pick(p, "Eggs (12") * 2 + pick(p, "Chicken Fillets") * 3
             date_night = round(meal2 + cinema * 2)
+            intl = pick(p, "International Primary School")
             out["cities"][cid] = {
                 "id": cid,
                 "name": slug,
                 "url": f"https://www.numbeo.com/cost-of-living/in/{slug}",
                 "rent": [round(rent1), round(rent1), round(rent3o or rent3c), round(rent3c or rent3o)],
                 "foodPerPerson": round(groceries + meal * 20),
+                "school": round(intl / 12 * 0.4) if intl else round(rent1 * 0.22),
                 "car": round(pick(p, "Gasoline (1 Liter)") * 80 + 6000),
                 "commute": round(pick(p, "Monthly Public Transport Pass")),
                 "utilities": round(pick(p, "Basic Utilities") + pick(p, "Broadband Internet")),
