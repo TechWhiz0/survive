@@ -204,6 +204,54 @@ function ReceiptBody({ result }: { result: Survival }) {
   );
 }
 
+function CityChart({ row }: { row: Survival }) {
+  const pressure = shareOfSalary(
+    row.lines.rent.amount + row.lines.food.amount,
+    row.salary,
+  );
+  return (
+    <article className="max-w-xl border border-[#3d3833] bg-[#0b0b0b] px-8 py-10">
+      <p className="text-[11px] tracking-[0.22em] text-[#d2cbc2]">
+        {row.city.name.toUpperCase()}
+      </p>
+      <div className="mt-6 flex items-center gap-4">
+        <PressureMeter survives={row.survives} value={pressure} />
+        <div>
+          <p className="font-serif text-3xl leading-none">
+            {Math.round(pressure * 100)}%
+          </p>
+          <p className="mt-2 text-[11px] tracking-[0.16em] text-[#c4b7a4]">
+            RENT + FOOD
+          </p>
+        </div>
+      </div>
+      <div className="mt-8 space-y-5">
+        {LINE_ORDER.map((key) => {
+          const line = row.lines[key];
+          return (
+            <LedgerBar
+              amount={line.amount}
+              key={key}
+              label={line.label}
+              salary={row.salary}
+              tone={lineTone(line.mark)}
+            />
+          );
+        })}
+      </div>
+      <p
+        className={`mt-8 border-t pt-5 text-[11px] tracking-[0.2em] ${
+          row.survives
+            ? "border-[#e8e0d4] text-[#e8e0d4]"
+            : "border-[#c4784a] text-[#c4784a]"
+        }`}
+      >
+        {row.survives ? "SURVIVES" : "DOES NOT HOLD"}
+      </p>
+    </article>
+  );
+}
+
 const chip =
   "min-h-12 cursor-pointer px-5 text-sm tracking-[0.12em] transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream";
 
@@ -235,9 +283,9 @@ export function App() {
     () => simulate(printed.city, printed.salary, printed.family, cities),
     [printed, cities],
   );
-  const comparisons = useMemo(
-    () => cities.map((row) => simulate(row.id, printed.salary, printed.family, cities)),
-    [printed, cities],
+  const selected = useMemo(
+    () => simulate(city, salary, family, cities),
+    [city, salary, family, cities],
   );
 
   function printReceipt() {
@@ -266,7 +314,7 @@ export function App() {
           className="inline-flex min-h-12 cursor-pointer items-center gap-2 bg-cream px-5 text-xs font-medium tracking-[0.18em] text-cream-ink transition-colors duration-200 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream"
           href="#compare"
         >
-          COMPARE CITIES
+          CITY LEDGER
           <ArrowUpRightIcon size={16} />
         </a>
       </header>
@@ -303,30 +351,26 @@ export function App() {
               printReceipt();
             }}
           >
-            <fieldset>
-              <legend className="text-xs tracking-[0.22em] text-[#d2cbc2]">
+            <div>
+              <label
+                className="text-xs tracking-[0.22em] text-[#d2cbc2]"
+                htmlFor="city"
+              >
                 CITY
-              </legend>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {cities.map((option) => {
-                  const active = option.id === city;
-                  return (
-                    <button
-                      className={`${chip} ${
-                        active
-                          ? "bg-cream text-cream-ink"
-                          : "border border-[#5c564e] text-[#f4efe8] hover:border-cream"
-                      }`}
-                      key={option.id}
-                      onClick={() => setCity(option.id)}
-                      type="button"
-                    >
-                      {option.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>
+              </label>
+              <select
+                className="city-select mt-4 min-h-14 w-full max-w-md cursor-pointer appearance-none border border-[#5c564e] bg-[#111] px-5 text-base text-[#faf6ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream"
+                id="city"
+                onChange={(event) => setCity(event.target.value as CityId)}
+                value={city}
+              >
+                {cities.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div>
               <label
@@ -414,68 +458,17 @@ export function App() {
       <section className="mx-auto max-w-[90rem] px-8 pb-28" id="compare">
         <div className="mb-10 border-t border-[#3d3833] pt-12">
           <p className="text-xs tracking-[0.22em] text-[#d2cbc2]">
-            SAME SALARY · {cities.length} CITIES
+            SELECTED CITY
           </p>
           <h2 className="mt-4 max-w-4xl font-serif text-5xl font-medium leading-tight">
-            {rupees(printed.salary)} across {cities.length} Indian cities
+            {rupees(salary)} in {selected.city.name}
           </h2>
           <p className="mt-4 text-xs tracking-[0.16em] text-[#c4b7a4]">
             Bars are share of salary. Holds · Tight · Breaks · Gone
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-px bg-[#3d3833] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {comparisons.map((row) => {
-            const pressure = shareOfSalary(
-              row.lines.rent.amount + row.lines.food.amount,
-              row.salary,
-            );
-            return (
-              <article
-                className="bg-[#050505] px-6 py-8"
-                key={row.city.id}
-              >
-                <p className="text-[11px] tracking-[0.22em] text-[#d2cbc2]">
-                  {row.city.name.toUpperCase()}
-                </p>
-                <div className="mt-6 flex items-center gap-4">
-                  <PressureMeter survives={row.survives} value={pressure} />
-                  <div>
-                    <p className="font-serif text-3xl leading-none">
-                      {Math.round(pressure * 100)}%
-                    </p>
-                    <p className="mt-2 text-[11px] tracking-[0.16em] text-[#c4b7a4]">
-                      RENT + FOOD
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-8 space-y-5">
-                  {LINE_ORDER.map((key) => {
-                    const line = row.lines[key];
-                    return (
-                      <LedgerBar
-                        amount={line.amount}
-                        key={key}
-                        label={line.label}
-                        salary={row.salary}
-                        tone={lineTone(line.mark)}
-                      />
-                    );
-                  })}
-                </div>
-                <p
-                  className={`mt-8 border-t pt-5 text-[11px] tracking-[0.2em] ${
-                    row.survives
-                      ? "border-[#e8e0d4] text-[#e8e0d4]"
-                      : "border-[#c4784a] text-[#c4784a]"
-                  }`}
-                >
-                  {row.survives ? "SURVIVES" : "DOES NOT HOLD"}
-                </p>
-              </article>
-            );
-          })}
-        </div>
+        <CityChart row={selected} />
       </section>
     </div>
   );
