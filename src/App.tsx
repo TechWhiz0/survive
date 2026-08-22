@@ -204,14 +204,36 @@ function ReceiptBody({ result }: { result: Survival }) {
   );
 }
 
-function CityChart({ row }: { row: Survival }) {
+function pickPeers(cities: CityCosts[], selected: CityId, count = 3): CityId[] {
+  const rest = cities.filter((c) => c.id !== selected).map((c) => c.id);
+  for (let i = rest.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rest[i], rest[j]] = [rest[j], rest[i]];
+  }
+  return rest.slice(0, count);
+}
+
+function CityChart({
+  row,
+  featured,
+}: {
+  row: Survival;
+  featured?: boolean;
+}) {
   const pressure = shareOfSalary(
     row.lines.rent.amount + row.lines.food.amount,
     row.salary,
   );
   return (
-    <article className="max-w-xl border border-[#3d3833] bg-[#0b0b0b] px-8 py-10">
+    <article
+      className={`h-full px-8 py-10 ${
+        featured
+          ? "border border-cream bg-[#14110e]"
+          : "border border-[#3d3833] bg-[#0b0b0b]"
+      }`}
+    >
       <p className="text-[11px] tracking-[0.22em] text-[#d2cbc2]">
+        {featured ? "SELECTED · " : ""}
         {row.city.name.toUpperCase()}
       </p>
       <div className="mt-6 flex items-center gap-4">
@@ -263,6 +285,7 @@ export function App() {
   const [salary, setSalary] = useState(50_000);
   const [family, setFamily] = useState<FamilySize>(1);
   const [printed, setPrinted] = useState({ city, salary, family });
+  const [peers, setPeers] = useState<CityId[]>([]);
   const [run, setRun] = useState(0);
   const stage = usePrinter(run);
 
@@ -279,6 +302,11 @@ export function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (cities.length < 2) return;
+    setPeers(pickPeers(cities, city));
+  }, [city, cities]);
+
   const result = useMemo(
     () => simulate(printed.city, printed.salary, printed.family, cities),
     [printed, cities],
@@ -287,6 +315,10 @@ export function App() {
     () => simulate(city, salary, family, cities),
     [city, salary, family, cities],
   );
+  const compared = useMemo(() => {
+    const ids = [city, ...peers.filter((id) => id !== city)].slice(0, 4);
+    return ids.map((id) => simulate(id, salary, family, cities));
+  }, [city, peers, salary, family, cities]);
 
   function printReceipt() {
     setPrinted({ city, salary, family });
@@ -458,17 +490,25 @@ export function App() {
       <section className="mx-auto max-w-[90rem] px-8 pb-28" id="compare">
         <div className="mb-10 border-t border-[#3d3833] pt-12">
           <p className="text-xs tracking-[0.22em] text-[#d2cbc2]">
-            SELECTED CITY
+            YOUR CITY + 3 RANDOM
           </p>
           <h2 className="mt-4 max-w-4xl font-serif text-5xl font-medium leading-tight">
-            {rupees(salary)} in {selected.city.name}
+            {rupees(salary)} in {selected.city.name} vs three others
           </h2>
           <p className="mt-4 text-xs tracking-[0.16em] text-[#c4b7a4]">
             Bars are share of salary. Holds · Tight · Breaks · Gone
           </p>
         </div>
 
-        <CityChart row={selected} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {compared.map((row) => (
+            <CityChart
+              featured={row.city.id === city}
+              key={row.city.id}
+              row={row}
+            />
+          ))}
+        </div>
       </section>
     </div>
   );
