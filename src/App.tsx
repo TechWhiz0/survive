@@ -15,6 +15,7 @@ import {
   lineTone,
   loadGeminiLived,
   rupees,
+  rupeesRange,
   simulate,
   type LivedCosts,
   type Survival,
@@ -78,15 +79,19 @@ function barFill(tone: Tone): string {
 function LedgerBar({
   label,
   amount,
+  low,
+  high,
   salary,
   tone,
 }: {
   label: string;
   amount: number;
+  low: number;
+  high: number;
   salary: number;
   tone: Tone;
 }) {
-  const width = shareOfSalary(Math.max(amount, 0), salary);
+  const width = shareOfSalary(Math.max(high, amount, 0), salary);
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
@@ -94,7 +99,7 @@ function LedgerBar({
           {label.toUpperCase()}
         </span>
         <span className="font-serif text-lg leading-none text-[#f4efe8]">
-          {rupees(amount)}
+          {rupeesRange(low, high)}
         </span>
       </div>
       <div
@@ -182,7 +187,7 @@ function ReceiptBody({ result }: { result: Survival }) {
             <div className="flex items-baseline justify-between gap-3">
               <span>{line.label}</span>
               <span className="text-[#4a453f]">
-                {rupees(line.amount)} · {toneCopy(tone)}
+                {rupeesRange(line.low, line.high)} · {toneCopy(tone)}
               </span>
             </div>
             <div className="mt-1 h-[2px] bg-[#d8d0c3]">
@@ -200,13 +205,17 @@ function ReceiptBody({ result }: { result: Survival }) {
           Left after rent + food + transit
           {result.family >= 3 ? " + education" : ""}
         </span>
-        <span>{rupees(result.leftover)}</span>
+        <span>
+          {rupeesRange(result.lines.savings.low, result.lines.savings.high)}
+        </span>
       </p>
       <p className="mt-4 text-center font-serif text-2xl leading-none text-[#1c1916]">
         {result.survives ? "YOU SURVIVE" : "YOU DO NOT SURVIVE"}
       </p>
       <p className="mt-3 text-center text-[11px] leading-4 text-[#4a453f]">
-        Typical spend for this salary, not city-centre listings.
+        {result.survives
+          ? "Ranges are typical monthly spend, not one listing."
+          : "This salary cannot cover what the city actually asks."}
         {result.family >= 3 ? " Education is mid private, per child." : ""}
       </p>
     </div>
@@ -230,10 +239,10 @@ function CityChart({
   featured?: boolean;
 }) {
   const pressure = shareOfSalary(
-    row.lines.rent.amount +
-      row.lines.food.amount +
-      row.lines.school.amount +
-      row.lines.car.amount,
+    row.lines.rent.high +
+      row.lines.food.high +
+      row.lines.school.high +
+      row.lines.car.high,
     row.salary,
   );
   return (
@@ -267,8 +276,10 @@ function CityChart({
           return (
             <LedgerBar
               amount={line.amount}
+              high={line.high}
               key={key}
               label={line.label}
+              low={line.low}
               salary={row.salary}
               tone={lineTone(line.mark)}
             />
