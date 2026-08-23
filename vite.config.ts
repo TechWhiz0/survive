@@ -59,7 +59,7 @@ function geminiHumanize(apiKey: string): Plugin {
           const prompt = `Indian monthly spend a real household pays in 2026. Not city-centre listings.
 Salary ₹${body.salary}. Family ${body.family} (3=1 child, 4=2 children).
 Outside 1BHK refs: ${compact}
-Rules: rent ≤30% salary (32% if family≥3). ₹50k Bangalore rent 8k-12k share/PG, transport 1.8k-3.5k metro/bike, no car unless salary≥150000. food=home cooking. school=0 if family<3 else mid CBSE/child.
+Rules: rent ≤30% salary (32% if family≥3). ₹50k Bangalore rent 8k-12k share/PG, transport 1.8k-3.5k metro/bike, no car unless salary≥150000. food=home cooking. school=0 if family<3 else mid CBSE/child. dating and weekend MUST rise with salary (~3–6% of salary each; a ₹1.5L earner spends more nights out than a ₹50k earner).
 JSON only: {"bangalore":{"rent":n,"food":n,"transport":n,"utilities":n,"school":n,"dating":n,"weekend":n},...} every city id.`;
 
           const models = ["gemini-2.5-flash", "gemini-flash-latest"];

@@ -243,13 +243,12 @@ export function humanize(
     0,
     salary * 0.18,
   );
-  const dating = family >= 3
-    ? Math.round(city.dating * 0.4)
-    : band === "economy"
-      ? Math.round(city.dating * 0.55)
-      : city.dating;
+  const pay = salary / 50_000;
+  const datingMul =
+    family >= 3 ? 0.4 : band === "economy" ? 0.55 : band === "mid" ? 0.85 : 1.15;
+  const dating = Math.round(city.dating * pay * datingMul);
   const weekend = Math.round(
-    city.weekend * (family === 1 ? 0.7 : 0.55 + family * 0.08),
+    city.weekend * pay * (family === 1 ? 0.7 : 0.5 + family * 0.08),
   );
   return { rent, food, transport, utilities, school, dating, weekend };
 }
@@ -271,8 +270,8 @@ export function clampLived(
     school: kidsInFamily(family)
       ? clamp(lived.school, 2500 * kidsInFamily(family), salary * 0.18)
       : 0,
-    dating: clamp(lived.dating, 400, salary * 0.08),
-    weekend: clamp(lived.weekend, 400, salary * 0.08),
+    dating: clamp(lived.dating, salary * 0.02, salary * 0.07),
+    weekend: clamp(lived.weekend, salary * 0.02, salary * 0.07),
   };
 }
 
@@ -284,11 +283,11 @@ export function simulate(
   overlay?: Partial<LivedCosts>,
 ): Survival {
   const city = cityById(cities, cityId);
-  const lived = clampLived(
-    { ...humanize(city, salary, family), ...overlay },
-    salary,
-    family,
-  );
+  const base = humanize(city, salary, family);
+  const ai = { ...overlay };
+  delete ai.dating;
+  delete ai.weekend;
+  const lived = clampLived({ ...base, ...ai }, salary, family);
   const { rent, food, transport, utilities, school, dating, weekend } = lived;
   const leftover = salary - rent - food - school - transport - utilities;
   const afterDating = leftover - Math.min(dating, Math.max(leftover, 0));
@@ -395,4 +394,11 @@ export function assertSurvivalExample(): void {
   if (r.lines.school.amount !== 0) throw new Error("solo pays no school");
   const family = simulate("bangalore", 80_000, 3);
   if (family.lines.school.amount <= 0) throw new Error("family of 3 needs school");
+  const richer = simulate("bangalore", 150_000, 1);
+  if (richer.lines.dating.amount <= r.lines.dating.amount) {
+    throw new Error("dating must rise with salary");
+  }
+  if (richer.lines.weekend.amount <= r.lines.weekend.amount) {
+    throw new Error("weekend must rise with salary");
+  }
 }
