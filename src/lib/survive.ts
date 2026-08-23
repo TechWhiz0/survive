@@ -69,7 +69,6 @@ export type LivingFile = {
 };
 
 export const CITY_ORDER = Object.keys(CITY_SLUGS) as CityId[];
-const SLUG = CITY_SLUGS;
 
 export type Tone = "hold" | "tight" | "break" | "void";
 
@@ -353,75 +352,6 @@ export function rupees(n: number): string {
   return `${sign}₹${Math.abs(Math.round(n)).toLocaleString("en-IN")}`;
 }
 
-function rupee(s: string): number {
-  return Number(s.replace(/,/g, ""));
-}
-
-function pick(prices: Record<string, number>, key: string): number | undefined {
-  const needle = key.toLowerCase();
-  for (const [name, val] of Object.entries(prices)) {
-    if (name.toLowerCase().includes(needle)) return val;
-  }
-}
-
-function parseNumbeo(html: string): Record<string, number> {
-  const prices: Record<string, number> = {};
-  const row =
-    /<td[^>]*>(.*?)<\/td>\s*<td[^>]*class="priceValue[^"]*"[^>]*>\s*<span class="first_currency">(?:&#x20b9;|₹)?\s*([0-9,.]+)/gi;
-  for (const match of html.matchAll(row)) {
-    const name = match[1]
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/\s+/g, " ")
-      .trim();
-    prices[name] = rupee(match[2]);
-  }
-  return prices;
-}
-
-function deriveCity(
-  id: CityId,
-  html: string,
-): CityCosts {
-  const prices = parseNumbeo(html);
-  const meal = pick(prices, "Meal at an Inexpensive Restaurant") ?? 0;
-  const meal2 = pick(prices, "Meal for Two at a Mid-Range Restaurant") ?? 0;
-  const cinema = pick(prices, "Cinema Ticket") ?? 0;
-  const pass = pick(prices, "Monthly Public Transport Pass") ?? 0;
-  const gas = pick(prices, "Gasoline (1 Liter)") ?? 100;
-  const utilities = pick(prices, "Basic Utilities") ?? 0;
-  const internet = pick(prices, "Broadband Internet") ?? 0;
-  const rent1c = pick(prices, "1 Bedroom Apartment in City Centre") ?? 0;
-  const rent3c = pick(prices, "3 Bedroom Apartment in City Centre") ?? 0;
-  const rent3o = pick(prices, "3 Bedroom Apartment Outside of City Centre") ?? 0;
-  const milk = pick(prices, "Milk (Regular, 1 Liter)") ?? 0;
-  const bread = pick(prices, "Fresh White Bread") ?? 0;
-  const rice = pick(prices, "White Rice (1 kg)") ?? 0;
-  const eggs = pick(prices, "Eggs (12") ?? 0;
-  const chicken = pick(prices, "Chicken Fillets") ?? 0;
-  const groceries = milk * 8 + bread * 8 + rice * 4 + eggs * 2 + chicken * 3;
-  const dateNight = Math.round(meal2 + cinema * 2);
-  const intlYear = pick(prices, "International Primary School") ?? 0;
-  return {
-    id,
-    name: SLUG[id],
-    url: `https://www.numbeo.com/cost-of-living/in/${SLUG[id]}`,
-    rent: [
-      Math.round(rent1c),
-      Math.round(rent1c),
-      Math.round(rent3o || rent3c),
-      Math.round(rent3c || rent3o),
-    ],
-    foodPerPerson: Math.round(groceries + meal * 20),
-    school: Math.round(intlYear ? (intlYear / 12) * 0.4 : rent1c * 0.22),
-    car: Math.round(gas * 80 + 6000),
-    commute: Math.round(pass),
-    utilities: Math.round(utilities + internet),
-    dating: dateNight,
-    weekend: dateNight,
-  };
-}
-
 export async function loadGeminiLived(
   salary: number,
   family: FamilySize,
@@ -448,30 +378,6 @@ export async function loadGeminiLived(
     if (!res.ok) return null;
     const data = (await res.json()) as Partial<Record<CityId, LivedCosts>>;
     return data && typeof data === "object" ? data : null;
-  } catch {
-    return null;
-  }
-}
-
-export async function loadLiveCities(): Promise<{
-  cities: CityCosts[];
-  source: string;
-  fetchedAt: string;
-} | null> {
-  try {
-    const pages = await Promise.all(
-      CITY_ORDER.map(async (id) => {
-        const res = await fetch(`/live/numbeo/${SLUG[id]}`);
-        if (!res.ok) throw new Error(String(res.status));
-        return deriveCity(id, await res.text());
-      }),
-    );
-    if (pages.some((c) => !c.rent[0] || !c.foodPerPerson)) return null;
-    return {
-      cities: pages,
-      source: "Live Numbeo city prices",
-      fetchedAt: new Date().toISOString(),
-    };
   } catch {
     return null;
   }

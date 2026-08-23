@@ -14,7 +14,6 @@ import {
   type Tone,
   lineTone,
   loadGeminiLived,
-  loadLiveCities,
   rupees,
   simulate,
   type LivedCosts,
@@ -294,9 +293,8 @@ const chip =
   "min-h-12 cursor-pointer px-5 text-sm tracking-[0.12em] transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream";
 
 export function App() {
-  const [cities, setCities] = useState<CityCosts[]>(CITIES);
   const [source, setSource] = useState(snapshot.source);
-  const [fetchedAt, setFetchedAt] = useState(snapshot.fetchedAt);
+  const [fetchedAt] = useState(snapshot.fetchedAt);
   const [city, setCity] = useState<CityId>("bangalore");
   const [salary, setSalary] = useState(50_000);
   const [family, setFamily] = useState<FamilySize>(1);
@@ -306,28 +304,14 @@ export function App() {
   const stage = usePrinter(run);
 
   useEffect(() => {
-    let on = true;
-    loadLiveCities().then((live) => {
-      if (!on || !live) return;
-      setCities(live.cities);
-      setSource(live.source);
-      setFetchedAt(live.fetchedAt);
-    });
-    return () => {
-      on = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (cities.length < 2) return;
-    setPeers(pickPeers(cities, city));
-  }, [city, cities]);
+    setPeers(pickPeers(CITIES, city));
+  }, [city]);
 
   useEffect(() => {
     let on = true;
     const band = Math.round(salary / 10_000) * 10_000;
     const t = window.setTimeout(() => {
-      loadGeminiLived(band, family, cities).then((next) => {
+      loadGeminiLived(band, family, CITIES).then((next) => {
         if (on && next) {
           setLived(next);
           setSource("Typical spend for this salary · Gemini-adjusted");
@@ -338,16 +322,16 @@ export function App() {
       on = false;
       window.clearTimeout(t);
     };
-  }, [salary, family, cities]);
+  }, [salary, family]);
 
   const result = useMemo(
-    () => simulate(city, salary, family, cities, lived[city]),
-    [city, salary, family, cities, lived],
+    () => simulate(city, salary, family, CITIES, lived[city]),
+    [city, salary, family, lived],
   );
   const compared = useMemo(() => {
     const ids = [city, ...peers.filter((id) => id !== city)].slice(0, 4);
-    return ids.map((id) => simulate(id, salary, family, cities, lived[id]));
-  }, [city, peers, salary, family, cities, lived]);
+    return ids.map((id) => simulate(id, salary, family, CITIES, lived[id]));
+  }, [city, peers, salary, family, lived]);
 
   function printReceipt() {
     setRun((n) => n + 1);
@@ -424,7 +408,7 @@ export function App() {
                 onChange={(event) => setCity(event.target.value as CityId)}
                 value={city}
               >
-                {cities.map((option) => (
+                {CITIES.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.name}
                   </option>

@@ -1,29 +1,48 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 
-function readBody(req: {
-  on: (e: string, fn: (x?: Buffer) => void) => void;
-}): Promise<string> {
+function readKey(fallback: string): string {
+  if (fallback) return fallback;
+  try {
+    const line = readFileSync(".env", "utf8")
+      .split("\n")
+      .find((row) => row.startsWith("GEMINI_API_KEY="));
+    return line ? line.slice("GEMINI_API_KEY=".length).trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+function readBody(req: NodeJS.ReadableStream): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    req.on("data", (c) => {
-      if (c) chunks.push(c);
-    });
+    req.on("data", (c: Buffer) => chunks.push(c));
     req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
     req.on("error", reject);
   });
+}
+
+function geminiText(json: {
+  candidates?: { content?: { parts?: { text?: string }[] } }[];
+}): string {
+  const parts = json.candidates?.[0]?.content?.parts ?? [];
+  return parts.map((p) => p.text ?? "").join("");
 }
 
 function geminiHumanize(apiKey: string): Plugin {
   return {
     name: "gemini-humanize",
     configureServer(server) {
-      server.middlewares.use("/live/humanize", async (req, res, next) => {
+      server.middlewares.use(async (req, res, next) => {
+        const path = req.url?.split("?")[0];
+        if (path !== "/live/humanize") return next();
         if (req.method !== "POST") return next();
         res.setHeader("Content-Type", "application/json");
-        if (!apiKey) {
+        const key = readKey(apiKey);
+        if (!key) {
           res.statusCode = 503;
           res.end(JSON.stringify({ error: "missing GEMINI_API_KEY" }));
           return;
@@ -32,76 +51,58 @@ function geminiHumanize(apiKey: string): Plugin {
           const body = JSON.parse(await readBody(req)) as {
             salary: number;
             family: number;
-            cities: {
-              id: string;
-              name: string;
-              marketRent: number;
-              outside: number;
-              foodPerPerson: number;
-              commute: number;
-              utilities: number;
-            }[];
+            cities: { id: string; name: string; outside: number }[];
           };
-          const prompt = `You correct Indian cost-of-living to what a REAL household would pay in 2026, not city-centre listings.
+          const compact = (body.cities ?? [])
+            .map((c) => `${c.id}:${c.outside}`)
+            .join(",");
+          const prompt = `Indian monthly spend a real household pays in 2026. Not city-centre listings.
+Salary ₹${body.salary}. Family ${body.family} (3=1 child, 4=2 children).
+Outside 1BHK refs: ${compact}
+Rules: rent ≤30% salary (32% if family≥3). ₹50k Bangalore rent 8k-12k share/PG, transport 1.8k-3.5k metro/bike, no car unless salary≥150000. food=home cooking. school=0 if family<3 else mid CBSE/child.
+JSON only: {"bangalore":{"rent":n,"food":n,"transport":n,"utilities":n,"school":n,"dating":n,"weekend":n},...} every city id.`;
 
-Salary: ₹${body.salary}/month. Family size: ${body.family} (1=solo, 2=couple, 3=1 child, 4=2 children).
-Market stickers (DO NOT copy — these are unaffordable listings):
-${JSON.stringify(body.cities)}
-
-Rules:
-- rent = PG / shared room / outskirts 1BHK / 2BHK they would actually take. Never exceed 30% of salary (32% if family>=3). A ₹50,000 earner in Bangalore pays ~₹8,000–₹12,000 (share/PG), NOT ₹25,000–₹31,000.
-- transport = metro + bus + bike fuel they would use. ₹1,800–₹3,500 on low salaries. NO car (₹12k–₹17k fuel+EMI) unless salary >= ₹1,50,000.
-- food = home cooking + some eating out.
-- school = 0 if family < 3, else mid CBSE private per child (not international).
-- Return ONLY JSON: { "<cityId>": { "rent": n, "food": n, "transport": n, "utilities": n, "school": n, "dating": n, "weekend": n } }
-- All values monthly INR integers. Include every city id.`;
-
-          const models = [
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-          ];
+          const models = ["gemini-2.5-flash", "gemini-flash-latest"];
           let text = "";
           let last = "";
           for (const model of models) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-            const gRes = await fetch(url, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  temperature: 0.3,
-                  responseMimeType: "application/json",
+            const gRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-goog-api-key": key,
                 },
-              }),
-            });
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: {
+                    temperature: 0.2,
+                    responseMimeType: "application/json",
+                  },
+                }),
+              },
+            );
             last = `${gRes.status} ${model}`;
-            if (!gRes.ok) continue;
-            const json = (await gRes.json()) as {
-              candidates?: { content?: { parts?: { text?: string }[] } }[];
-            };
-            text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+            if (!gRes.ok) {
+              const err = await gRes.text();
+              last += ` ${err.slice(0, 160)}`;
+              continue;
+            }
+            text = geminiText(await gRes.json());
             if (text) break;
           }
           if (!text) {
-            res.statusCode = 502;
-            res.end(JSON.stringify({ error: last || "gemini failed" }));
+            console.warn("[humanize]", last);
+            res.end("{}");
             return;
           }
           const start = text.indexOf("{");
           const end = text.lastIndexOf("}");
-          const parsed = JSON.parse(
-            start >= 0 ? text.slice(start, end + 1) : text,
-          );
-          res.end(JSON.stringify(parsed));
+          res.end(start >= 0 ? text.slice(start, end + 1) : text);
         } catch (err) {
-          res.statusCode = 500;
-          res.end(
-            JSON.stringify({
-              error: err instanceof Error ? err.message : "humanize failed",
-            }),
-          );
+          console.warn("[humanize]", err);
+          res.end("{}");
         }
       });
     },
@@ -115,16 +116,6 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
-      },
-    },
-    server: {
-      proxy: {
-        "/live/numbeo": {
-          target: "https://www.numbeo.com",
-          changeOrigin: true,
-          rewrite: (path) =>
-            path.replace(/^\/live\/numbeo/, "/cost-of-living/in"),
-        },
       },
     },
   };
