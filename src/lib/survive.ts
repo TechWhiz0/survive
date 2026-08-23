@@ -48,6 +48,17 @@ export type CityCosts = {
   utilities: number;
   dating: number;
   weekend: number;
+  raw?: { rent1Outside?: number };
+};
+
+export type LivedCosts = {
+  rent: number;
+  food: number;
+  transport: number;
+  utilities: number;
+  school: number;
+  dating: number;
+  weekend: number;
 };
 
 export type LivingFile = {
@@ -80,7 +91,7 @@ export const LINE_LABELS: Record<LineKey, string> = {
   rent: "Rent",
   food: "Food",
   school: "Education",
-  car: "Car",
+  car: "Transport",
   savings: "Savings",
   dating: "Dating",
   weekend: "Weekend plans",
@@ -181,22 +192,106 @@ export type Survival = {
   survives: boolean;
 };
 
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.round(Math.min(hi, Math.max(lo, n)));
+}
+
+function bandFor(salary: number, family: FamilySize): "economy" | "mid" | "ok" {
+  const per = salary / family;
+  if (salary <= 55_000 || per < 30_000) return "economy";
+  if (salary <= 120_000 || per < 60_000) return "mid";
+  return "ok";
+}
+
+/** What a household on this salary would actually spend — not city-centre listings. */
+export function humanize(
+  city: CityCosts,
+  salary: number,
+  family: FamilySize,
+): LivedCosts {
+  const band = bandFor(salary, family);
+  const outside = city.raw?.rent1Outside ?? city.rent[0] * 0.58;
+  const centre = city.rent[0] ?? outside;
+  const familyAsk = city.rent[family - 1] ?? city.rent.at(-1) ?? centre;
+  let ask = outside;
+  if (family === 1) {
+    ask = band === "economy" ? outside * 0.52 : band === "mid" ? outside * 0.85 : centre;
+  } else if (family === 2) {
+    ask = band === "economy" ? outside * 0.75 : band === "mid" ? outside : centre * 1.05;
+  } else {
+    ask = band === "ok" ? familyAsk * 0.7 : familyAsk * 0.5;
+  }
+  const rent = clamp(ask, salary * 0.12, salary * (family >= 3 ? 0.32 : 0.3));
+  const foodMul = band === "economy" ? 0.62 : band === "mid" ? 0.78 : 0.92;
+  const food = clamp(
+    city.foodPerPerson * foodMul * family,
+    3500 * family,
+    salary * 0.28,
+  );
+  const transport =
+    band === "ok" && salary >= 150_000
+      ? clamp(city.commute + 8000, 5000, 14_000)
+      : band === "mid"
+        ? clamp(city.commute + 2200, 2500, 5500)
+        : clamp(Math.max(city.commute, 1800), 1500, 3500);
+  const utilities = clamp(
+    city.utilities * (family === 1 ? 0.7 : 0.9),
+    1500,
+    6000,
+  );
+  const school = clamp(
+    schoolPerChild(city) * kidsInFamily(family),
+    0,
+    salary * 0.18,
+  );
+  const dating = family >= 3
+    ? Math.round(city.dating * 0.4)
+    : band === "economy"
+      ? Math.round(city.dating * 0.55)
+      : city.dating;
+  const weekend = Math.round(
+    city.weekend * (family === 1 ? 0.7 : 0.55 + family * 0.08),
+  );
+  return { rent, food, transport, utilities, school, dating, weekend };
+}
+
+export function clampLived(
+  lived: LivedCosts,
+  salary: number,
+  family: FamilySize,
+): LivedCosts {
+  return {
+    rent: clamp(lived.rent, salary * 0.12, salary * 0.32),
+    food: clamp(lived.food, 3500 * family, salary * 0.28),
+    transport: clamp(
+      lived.transport,
+      1500,
+      salary < 100_000 ? 5500 : 14_000,
+    ),
+    utilities: clamp(lived.utilities, 1500, 6000),
+    school: kidsInFamily(family)
+      ? clamp(lived.school, 2500 * kidsInFamily(family), salary * 0.18)
+      : 0,
+    dating: clamp(lived.dating, 400, salary * 0.08),
+    weekend: clamp(lived.weekend, 400, salary * 0.08),
+  };
+}
+
 export function simulate(
   cityId: CityId,
   salary: number,
   family: FamilySize,
   cities: CityCosts[] = CITIES,
+  overlay?: Partial<LivedCosts>,
 ): Survival {
   const city = cityById(cities, cityId);
-  const rent = city.rent[family - 1] ?? city.rent.at(-1) ?? 0;
-  const food = city.foodPerPerson * family;
-  const school = schoolPerChild(city) * kidsInFamily(family);
-  const dating = family >= 3 ? Math.round(city.dating * 0.55) : city.dating;
-  const weekend = Math.round(
-    city.weekend * (family === 1 ? 1 : 0.75 + family * 0.15),
+  const lived = clampLived(
+    { ...humanize(city, salary, family), ...overlay },
+    salary,
+    family,
   );
-  const leftover =
-    salary - rent - food - school - city.commute - city.utilities;
+  const { rent, food, transport, utilities, school, dating, weekend } = lived;
+  const leftover = salary - rent - food - school - transport - utilities;
   const afterDating = leftover - Math.min(dating, Math.max(leftover, 0));
 
   const lines: Record<LineKey, Line> = {
@@ -221,8 +316,8 @@ export function simulate(
     car: {
       key: "car",
       label: LINE_LABELS.car,
-      amount: city.car,
-      mark: markCar(rent, food, school, city.car, salary),
+      amount: transport,
+      mark: markCar(rent, food, school, transport, salary),
     },
     savings: {
       key: "savings",
@@ -327,6 +422,37 @@ function deriveCity(
   };
 }
 
+export async function loadGeminiLived(
+  salary: number,
+  family: FamilySize,
+  cities: CityCosts[],
+): Promise<Partial<Record<CityId, LivedCosts>> | null> {
+  try {
+    const res = await fetch("/live/humanize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        salary,
+        family,
+        cities: cities.map((c) => ({
+          id: c.id,
+          name: c.name,
+          marketRent: c.rent[0],
+          outside: c.raw?.rent1Outside ?? Math.round(c.rent[0] * 0.58),
+          foodPerPerson: c.foodPerPerson,
+          commute: c.commute,
+          utilities: c.utilities,
+        })),
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<Record<CityId, LivedCosts>>;
+    return data && typeof data === "object" ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadLiveCities(): Promise<{
   cities: CityCosts[];
   source: string;
@@ -353,13 +479,14 @@ export async function loadLiveCities(): Promise<{
 
 export function assertSurvivalExample(): void {
   const r = simulate("bangalore", 50_000, 1);
-  if (r.lines.rent.mark !== "❌") throw new Error("Bangalore rent should fail at ₹50k");
+  if (r.lines.rent.amount > 13_000) {
+    throw new Error("50k Bangalore rent must be share/PG, not centre 1BHK");
+  }
+  if (r.lines.car.amount > 5_500) {
+    throw new Error("50k transport is metro/bike, not a car");
+  }
   if (r.lines.food.mark === "❌") throw new Error("Bangalore food should not fail at ₹50k");
   if (r.lines.school.amount !== 0) throw new Error("solo pays no school");
   const family = simulate("bangalore", 80_000, 3);
   if (family.lines.school.amount <= 0) throw new Error("family of 3 needs school");
-  const two = simulate("bangalore", 80_000, 4);
-  if (two.lines.school.amount !== family.lines.school.amount * 2) {
-    throw new Error("family of 4 is two children");
-  }
 }

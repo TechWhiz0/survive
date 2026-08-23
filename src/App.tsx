@@ -13,9 +13,11 @@ import {
   type LineKey,
   type Tone,
   lineTone,
+  loadGeminiLived,
   loadLiveCities,
   rupees,
   simulate,
+  type LivedCosts,
   type Survival,
   toneCopy,
 } from "@/lib/survive";
@@ -197,7 +199,7 @@ function ReceiptBody({ result }: { result: Survival }) {
       <div className="my-5 border-t border-dashed border-[#b7aea3]" />
       <p className="flex justify-between text-[#1c1916]">
         <span>
-          Left after rent + food
+          Left after rent + food + transit
           {result.family >= 3 ? " + education" : ""}
         </span>
         <span>{rupees(result.leftover)}</span>
@@ -206,7 +208,7 @@ function ReceiptBody({ result }: { result: Survival }) {
         {result.survives ? "YOU SURVIVE" : "YOU DO NOT SURVIVE"}
       </p>
       <p className="mt-4 text-center text-[11px] leading-4 text-[#4a453f]">
-        Numbeo city prices. 1BHK centre / 3BHK for families.
+        Typical spend for this salary, not city-centre listings.
         {result.family >= 3 ? " Education is mid private, per child." : ""}
       </p>
     </div>
@@ -232,7 +234,8 @@ function CityChart({
   const pressure = shareOfSalary(
     row.lines.rent.amount +
       row.lines.food.amount +
-      row.lines.school.amount,
+      row.lines.school.amount +
+      row.lines.car.amount,
     row.salary,
   );
   return (
@@ -254,7 +257,9 @@ function CityChart({
             {Math.round(pressure * 100)}%
           </p>
           <p className="mt-2 text-[11px] tracking-[0.16em] text-[#c4b7a4]">
-            {row.family >= 3 ? "RENT + FOOD + EDUCATION" : "RENT + FOOD"}
+            {row.family >= 3
+              ? "RENT + FOOD + EDUCATION + TRANSIT"
+              : "RENT + FOOD + TRANSIT"}
           </p>
         </div>
       </div>
@@ -296,6 +301,7 @@ export function App() {
   const [salary, setSalary] = useState(50_000);
   const [family, setFamily] = useState<FamilySize>(1);
   const [peers, setPeers] = useState<CityId[]>([]);
+  const [lived, setLived] = useState<Partial<Record<CityId, LivedCosts>>>({});
   const [run, setRun] = useState(0);
   const stage = usePrinter(run);
 
@@ -317,14 +323,31 @@ export function App() {
     setPeers(pickPeers(cities, city));
   }, [city, cities]);
 
+  useEffect(() => {
+    let on = true;
+    const band = Math.round(salary / 10_000) * 10_000;
+    const t = window.setTimeout(() => {
+      loadGeminiLived(band, family, cities).then((next) => {
+        if (on && next) {
+          setLived(next);
+          setSource("Typical spend for this salary · Gemini-adjusted");
+        }
+      });
+    }, 600);
+    return () => {
+      on = false;
+      window.clearTimeout(t);
+    };
+  }, [salary, family, cities]);
+
   const result = useMemo(
-    () => simulate(city, salary, family, cities),
-    [city, salary, family, cities],
+    () => simulate(city, salary, family, cities, lived[city]),
+    [city, salary, family, cities, lived],
   );
   const compared = useMemo(() => {
     const ids = [city, ...peers.filter((id) => id !== city)].slice(0, 4);
-    return ids.map((id) => simulate(id, salary, family, cities));
-  }, [city, peers, salary, family, cities]);
+    return ids.map((id) => simulate(id, salary, family, cities, lived[id]));
+  }, [city, peers, salary, family, cities, lived]);
 
   function printReceipt() {
     setRun((n) => n + 1);
@@ -359,15 +382,15 @@ export function App() {
       <main className="mx-auto grid max-w-[90rem] items-start gap-16 px-8 pt-8 pb-28 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,28rem)]">
         <section>
           <p className="text-xs tracking-[0.28em] text-[#d2cbc2]">
-            COST OF LIVING · INDIA · NUMBEO
+            COST OF LIVING · INDIA · REAL SPEND
           </p>
           <h1 className="mt-6 max-w-4xl font-serif text-[clamp(3.4rem,8vw,7.2rem)] leading-[0.92] font-medium">
             Can you survive in this Indian city?
           </h1>
           <p className="mt-7 max-w-2xl text-lg leading-8 text-[#d2cbc2]">
-            Pick a city, a monthly salary, and a household. We print the receipt
-            the city actually hands you - rent, food, education for kids, a car,
-            savings, dating, weekends.
+            Pick a city, a monthly salary, and a household. We print what a
+            person on that salary would actually pay - shared rent, home food,
+            metro or bike, school for kids. Not city-centre listings.
           </p>
           <p className="mt-4 text-sm text-[#c4b7a4]">
             {source} · {fetchedLabel} ·{" "}
