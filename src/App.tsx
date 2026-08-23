@@ -166,7 +166,7 @@ function ReceiptBody({ result }: { result: Survival }) {
   return (
     <div className="relative z-10 text-[13px] leading-6 text-[#1c1916]">
       <p className="text-center text-[11px] tracking-[0.28em] text-[#4a453f]">
-        SURVIVE INDIA
+        SURVIVEBRO
       </p>
       <p className="mt-4 text-center font-serif text-4xl leading-none text-[#1c1916]">
         {result.city.name}
@@ -359,7 +359,7 @@ export function App() {
       <header className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-8 py-7">
         <div className="flex items-center gap-2 text-sm font-medium tracking-[0.22em]">
           <StarFourIcon size={16} weight="fill" />
-          SURVIVE
+          SURVIVEBRO
         </div>
         <p className="hidden text-xs tracking-[0.22em] text-[#d2cbc2] md:block">
           CITY SURVIVAL INTELLIGENCE
@@ -491,7 +491,7 @@ export function App() {
           <ReceiptPrinter.Machine>
             <ReceiptPrinter.Header>
               <span className="text-sm font-semibold tracking-[0.22em] text-[#161412]">
-                SURVIVE
+                SURVIVEBRO
               </span>
               <span className="text-sm font-semibold tracking-[0.22em] text-[#161412]">
                 {result.city.name.toUpperCase()}
