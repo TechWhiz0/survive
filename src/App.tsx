@@ -178,24 +178,23 @@ function ReceiptBody({ result }: { result: Survival }) {
         const tone = lineTone(line.mark);
         const width = shareOfSalary(Math.max(line.amount, 0), result.salary);
         return (
-          <div className="mb-3" key={key}>
+          <div className="mb-2" key={key}>
             <div className="flex items-baseline justify-between gap-3">
               <span>{line.label}</span>
-              <span className="text-[#4a453f]">{rupees(line.amount)}</span>
+              <span className="text-[#4a453f]">
+                {rupees(line.amount)} · {toneCopy(tone)}
+              </span>
             </div>
-            <div className="mt-1 h-[3px] bg-[#d8d0c3]">
+            <div className="mt-1 h-[2px] bg-[#d8d0c3]">
               <div
                 className="h-full bg-[#1c1916]"
                 style={{ width: `${Math.round(width * 100)}%` }}
               />
             </div>
-            <p className="text-[10px] tracking-[0.16em] text-[#4a453f]">
-              {toneCopy(tone)}
-            </p>
           </div>
         );
       })}
-      <div className="my-5 border-t border-dashed border-[#b7aea3]" />
+      <div className="my-3 border-t border-dashed border-[#b7aea3]" />
       <p className="flex justify-between text-[#1c1916]">
         <span>
           Left after rent + food + transit
@@ -203,10 +202,10 @@ function ReceiptBody({ result }: { result: Survival }) {
         </span>
         <span>{rupees(result.leftover)}</span>
       </p>
-      <p className="mt-5 text-center font-serif text-2xl leading-none text-[#1c1916]">
+      <p className="mt-4 text-center font-serif text-2xl leading-none text-[#1c1916]">
         {result.survives ? "YOU SURVIVE" : "YOU DO NOT SURVIVE"}
       </p>
-      <p className="mt-4 text-center text-[11px] leading-4 text-[#4a453f]">
+      <p className="mt-3 text-center text-[11px] leading-4 text-[#4a453f]">
         Typical spend for this salary, not city-centre listings.
         {result.family >= 3 ? " Education is mid private, per child." : ""}
       </p>
